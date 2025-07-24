@@ -1,4 +1,5 @@
-# Task Manager with Role-Based Access Control
+```
+    # Task Manager with Role-Based Access Control
 
 A serverless task management system built with AWS services and React, featuring comprehensive role-based access control.
 
@@ -19,19 +20,20 @@ A serverless task management system built with AWS services and React, featuring
 
 ## Quick Start
 
-1. **Install Dependencies**
+1. **Prerequisites**
+   - AWS CLI installed and configured
+   - Node.js 18+ installed
+   ```bash
+   aws configure
+   # Enter your AWS Access Key ID, Secret Access Key, region, and output format
+   ```
+
+2. **Install Dependencies**
    ```bash
    npm install
    cd infrastructure && npm install
    cd ../backend && npm install
    cd ../frontend && npm install
-   ```
-
-2. **Deploy Infrastructure**
-   ```bash
-   cd infrastructure
-   cdk bootstrap
-   cdk deploy
    ```
 
 3. **Build Backend**
@@ -40,11 +42,19 @@ A serverless task management system built with AWS services and React, featuring
    npm run build
    ```
 
-4. **Configure Frontend**
+4. **Deploy Infrastructure**
+   ```bash
+   cd infrastructure
+   npm install -g aws-cdk
+   cdk bootstrap
+   cdk deploy
+   ```
+
+5. **Configure Frontend**
    - Update `frontend/src/App.tsx` with your Cognito and API Gateway URLs
    - Get values from CDK output after deployment
 
-5. **Run Frontend**
+6. **Run Frontend**
    ```bash
    cd frontend
    npm start
@@ -95,3 +105,23 @@ A serverless task management system built with AWS services and React, featuring
 - `DELETE /tasks/{id}` - Delete task (Admin only)
 
 All endpoints require valid Cognito JWT token in Authorization header.
+
+## User Management
+
+After deployment, create users and assign roles:
+
+1. **Create Users** (AWS Console > Cognito > User Pools)
+   - Add users manually or enable self-registration
+   - Confirm user accounts
+
+2. **Assign Roles** (AWS Console > Cognito > Groups)
+   - Add users to Admin, Contributor, or Viewer groups
+   - Groups determine API access permissions
+
+## Troubleshooting
+
+- **CDK Bootstrap Error**: Run `aws configure` to set up credentials
+- **Lambda Build Error**: Ensure `npm run build` completes in backend folder
+- **Frontend Auth Error**: Update Cognito config in `App.tsx` with deployed values
+- **CORS Issues**: API Gateway automatically handles CORS for configured origins
+    ```
