@@ -394,7 +394,3 @@ export class TaskManagerStack extends cdk.Stack {
   }
 }
 ```
-
----
-
-*This covers the first 3 steps with detailed Q prompts and expected responses. Should I continue with steps 4-6 next?*
