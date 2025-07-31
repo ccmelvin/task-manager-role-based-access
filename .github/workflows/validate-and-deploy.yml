@@ -1,0 +1,138 @@
+name: Validate IAM Policies and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  validate-policies:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: |
+          package-lock.json
+          backend/package-lock.json
+          frontend/package-lock.json
+          infrastructure/package-lock.json
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Install dependencies
+      run: |
+        npm install
+        cd backend && npm install
+        cd ../frontend && npm install  
+        cd ../infrastructure && npm install
+        pip install boto3
+    
+    - name: Build backend
+      run: |
+        cd backend
+        npm run build
+    
+    - name: Install AWS CDK
+      run: npm install -g aws-cdk
+    
+    - name: Synthesize CDK stack
+      run: |
+        cd infrastructure
+        cdk synth > cdk-template.json
+    
+    - name: Validate IAM policies
+      run: |
+        cd infrastructure
+        python3 iam_policy_validator_cli.py \
+          --file cdk-template.json \
+          --template \
+          --region ${{ env.AWS_REGION }} \
+          --fail-on-findings
+    
+    - name: Upload validation results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: cdk-template
+        path: infrastructure/cdk-template.json
+
+  deploy:
+    needs: validate-policies
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: |
+          package-lock.json
+          backend/package-lock.json
+          infrastructure/package-lock.json
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Install dependencies
+      run: |
+        npm install
+        cd backend && npm install
+        cd ../infrastructure && npm install
+    
+    - name: Build backend
+      run: |
+        cd backend
+        npm run build
+    
+    - name: Install AWS CDK
+      run: npm install -g aws-cdk
+    
+    - name: Bootstrap CDK (if needed)
+      run: |
+        cd infrastructure
+        cdk bootstrap
+    
+    - name: Deploy stack
+      run: |
+        cd infrastructure
+        cdk deploy --require-approval never
+    
+    - name: Get stack outputs
+      run: |
+        aws cloudformation describe-stacks \
+          --stack-name TaskManagerStack \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
+          --output table

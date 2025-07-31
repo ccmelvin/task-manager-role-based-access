@@ -64,9 +64,16 @@ A serverless task management system built with AWS services and React, featuring
 
 ```
 ├── infrastructure/         # AWS CDK infrastructure code
+│   ├── iam_policy_validator.py      # GUI policy validator
+│   ├── iam_policy_validator_cli.py  # CLI policy validator
+│   ├── demo_access_analyzer.py      # Complete Q + Access Analyzer demo
+│   ├── simple_validator.py          # Simple validation for screenshots
+│   ├── validate-and-deploy.sh       # CI/CD integration script
+│   └── problematic-policy.json      # Example problematic policy
 ├── backend/               # Lambda functions
 ├── frontend/              # React application
 ├── shared/                # Shared TypeScript types
+├── blog-post-iam-validator.md       # Blog post about Q + Access Analyzer
 └── README.md
 ```
 
@@ -76,6 +83,8 @@ A serverless task management system built with AWS services and React, featuring
 - Role-based API endpoint access control
 - Cognito user groups for permission management
 - CORS configuration for secure cross-origin requests
+- **IAM Policy Validation**: Automated security validation using AWS IAM Access Analyzer
+- **Amazon Q Integration**: AI-assisted policy generation with security remediation
 
 ## Database Schema
 
@@ -118,10 +127,37 @@ After deployment, create users and assign roles:
    - Add users to Admin, Contributor, or Viewer groups
    - Groups determine API access permissions
 
+## IAM Policy Validation
+
+This project includes tools for validating IAM policies using AWS IAM Access Analyzer:
+
+### Quick Demo
+```bash
+cd infrastructure
+python3 -m venv .venv
+source .venv/bin/activate
+pip install boto3
+aws sso login --profile spoke
+python3 demo_access_analyzer.py
+```
+
+### Features
+- **Automated Validation**: Catches overly permissive policies before deployment
+- **Amazon Q Integration**: Generate and remediate policies with AI assistance
+- **CI/CD Ready**: Integrate validation into deployment pipelines
+- **Real-time Feedback**: Detailed security findings with remediation guidance
+
+### Tools Available
+- `demo_access_analyzer.py` - Complete Amazon Q + Access Analyzer workflow
+- `simple_validator.py` - Validate individual policy files
+- `iam_policy_validator.py` - GUI interface for policy validation
+- `validate-and-deploy.sh` - CI/CD integration script
+
 ## Troubleshooting
 
 - **CDK Bootstrap Error**: Run `aws configure` to set up credentials
 - **Lambda Build Error**: Ensure `npm run build` completes in backend folder
 - **Frontend Auth Error**: Update Cognito config in `App.tsx` with deployed values
 - **CORS Issues**: API Gateway automatically handles CORS for configured origins
+- **Policy Validation Error**: Ensure AWS SSO profile is configured: `aws sso login --profile spoke`
     ```
