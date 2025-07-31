@@ -17,9 +17,9 @@ A simple GUI application to validate IAM policies using AWS Access Analyzer.
 pip install -r requirements.txt
 ```
 
-2. Ensure your AWS 'spoke' profile is configured:
+2. Ensure your AWS 'your-profile' profile is configured:
 ```bash
-aws configure --profile spoke
+aws configure --profile your-profile
 ```
 
 ## Usage
