@@ -17,9 +17,9 @@ class IAMPolicyValidator:
         self.root.title("IAM Policy Validator")
         self.root.geometry("800x600")
         
-        # AWS client with spoke profile
+        # AWS client with your-profile profile
         try:
-            self.session = boto3.Session(profile_name='spoke')
+            self.session = boto3.Session(profile_name='your-profile')
             self.access_analyzer = self.session.client('accessanalyzer', region_name='us-east-1')
         except Exception as e:
             messagebox.showerror("AWS Error", f"Failed to initialize AWS client: {str(e)}")
@@ -158,7 +158,7 @@ class IAMPolicyValidator:
             error_msg = f"AWS API Error: {e.response['Error']['Message']}"
             self.root.after(0, self._display_error, error_msg)
         except NoCredentialsError:
-            error_msg = "AWS credentials not found. Please configure your 'spoke' profile."
+            error_msg = "AWS credentials not found. Please configure your 'your-profile' profile."
             self.root.after(0, self._display_error, error_msg)
         except Exception as e:
             error_msg = f"Unexpected error: {str(e)}"

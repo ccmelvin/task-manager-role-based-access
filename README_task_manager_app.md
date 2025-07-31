@@ -137,7 +137,7 @@ cd infrastructure
 python3 -m venv .venv
 source .venv/bin/activate
 pip install boto3
-aws sso login --profile spoke
+aws sso login --profile your-profile
 python3 demo_access_analyzer.py
 ```
 
@@ -159,4 +159,4 @@ python3 demo_access_analyzer.py
 - **Lambda Build Error**: Ensure `npm run build` completes in backend folder
 - **Frontend Auth Error**: Update Cognito config in `App.tsx` with deployed values
 - **CORS Issues**: API Gateway automatically handles CORS for configured origins
-- **Policy Validation Error**: Ensure AWS SSO profile is configured: `aws sso login --profile spoke`
+- **Policy Validation Error**: Ensure AWS SSO profile is configured: `aws sso login --profile your-profile`

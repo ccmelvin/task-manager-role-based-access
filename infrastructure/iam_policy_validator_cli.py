@@ -11,7 +11,7 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 
 class IAMPolicyValidatorCLI:
-    def __init__(self, profile='spoke', region='us-east-1'):
+    def __init__(self, profile='your-profile', region='us-east-1'):
         try:
             self.session = boto3.Session(profile_name=profile)
             self.access_analyzer = self.session.client('accessanalyzer', region_name=region)
@@ -125,7 +125,7 @@ def main():
                        default='IDENTITY_POLICY', help='Policy type')
     parser.add_argument('--template', action='store_true', 
                        help='Treat input file as CloudFormation template and extract policies')
-    parser.add_argument('--profile', default='spoke', help='AWS profile to use')
+    parser.add_argument('--profile', default='your-profile', help='AWS profile to use')
     parser.add_argument('--region', default='us-east-1', help='AWS region')
     parser.add_argument('--fail-on-findings', action='store_true', 
                        help='Exit with non-zero code if findings are found')

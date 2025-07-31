@@ -15,7 +15,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-AWS_PROFILE=${AWS_PROFILE:-spoke}
+AWS_PROFILE=${AWS_PROFILE:-your-profile}
 AWS_REGION=${AWS_REGION:-us-east-1}
 STACK_NAME=${STACK_NAME:-TaskManagerStack}
 

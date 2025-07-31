@@ -11,7 +11,7 @@ def demo_access_analyzer_workflow():
     """Demonstrate the complete Q + Access Analyzer workflow"""
     
     # Initialize Access Analyzer client with SSO profile
-    session = boto3.Session(profile_name='spoke')
+    session = boto3.Session(profile_name='your-profile')
     client = session.client('accessanalyzer', region_name='us-east-1')
     
     print("🤖 Amazon Q + IAM Access Analyzer Demo")

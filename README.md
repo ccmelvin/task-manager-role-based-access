@@ -1,4 +1,4 @@
-# IAM Policy Validator
+# IAM Policy Validator GUI
 
 A Python GUI application to validate IAM policies using AWS Access Analyzer.
 

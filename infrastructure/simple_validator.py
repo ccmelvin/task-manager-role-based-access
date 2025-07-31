@@ -19,7 +19,7 @@ def validate_policy_file(filename):
     print()
     
     # Initialize Access Analyzer
-    session = boto3.Session(profile_name='spoke')
+    session = boto3.Session(profile_name='your-profile')
     client = session.client('accessanalyzer', region_name='us-east-1')
     
     # Validate
