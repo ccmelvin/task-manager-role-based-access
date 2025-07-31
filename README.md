@@ -1,5 +1,4 @@
-```
-    # Task Manager with Role-Based Access Control
+# Task Manager with Role-Based Access Control
 
 A serverless task management system built with AWS services and React, featuring comprehensive role-based access control.
 
@@ -74,6 +73,7 @@ A serverless task management system built with AWS services and React, featuring
 ├── frontend/              # React application
 ├── shared/                # Shared TypeScript types
 ├── blog-post-iam-validator.md       # Blog post about Q + Access Analyzer
+├── q-access-analyzer-walkthrough.md # Step-by-step Q + Access Analyzer guide
 └── README.md
 ```
 
@@ -160,4 +160,3 @@ python3 demo_access_analyzer.py
 - **Frontend Auth Error**: Update Cognito config in `App.tsx` with deployed values
 - **CORS Issues**: API Gateway automatically handles CORS for configured origins
 - **Policy Validation Error**: Ensure AWS SSO profile is configured: `aws sso login --profile spoke`
-    ```
