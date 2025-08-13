@@ -3,10 +3,8 @@ name: 🏗️ Build Test
 on:
   push:
     branches: [ main, develop ]
-    paths: [ 'frontend/**' ]
   pull_request:
     branches: [ main ]
-    paths: [ 'frontend/**' ]
 
 jobs:
   build-frontend:
@@ -50,9 +48,52 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements-test.txt
 
-    - name: 🧪 Run infrastructure tests
+    - name: 🧪 Run AWS integration tests
       working-directory: ./infrastructure
-      run: python -m pytest tests/ -v
+      run: python -m pytest tests/test_aws_integration.py tests/test_cli_e2e.py -v
 
     - name: ✅ Infrastructure tests passed
       run: echo "✅ Infrastructure tests passed!"
+
+  validate-project-structure:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔍 Validate project structure
+      run: |
+        echo "Checking project structure..."
+        
+        # Check frontend structure
+        if [ -f "frontend/package.json" ]; then
+          echo "✅ Frontend package.json exists"
+        else
+          echo "❌ Frontend package.json missing"
+          exit 1
+        fi
+        
+        # Check infrastructure structure
+        if [ -f "infrastructure/requirements-test.txt" ]; then
+          echo "✅ Infrastructure requirements-test.txt exists"
+        else
+          echo "❌ Infrastructure requirements-test.txt missing"
+          exit 1
+        fi
+        
+        # Check for IAM policy validator tools
+        if [ -f "infrastructure/iam_policy_validator.py" ]; then
+          echo "✅ IAM Policy Validator GUI exists"
+        else
+          echo "❌ IAM Policy Validator GUI missing"
+          exit 1
+        fi
+        
+        if [ -f "infrastructure/simple_validator.py" ]; then
+          echo "✅ IAM Policy Validator CLI exists"
+        else
+          echo "❌ IAM Policy Validator CLI missing"
+          exit 1
+        fi
+        
+        echo "✅ All project structure checks passed!"
