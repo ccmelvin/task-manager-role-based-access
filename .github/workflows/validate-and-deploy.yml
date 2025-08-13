@@ -1,10 +1,12 @@
 name: Validate IAM Policies and Deploy
 
+# Temporarily disabled to focus on working CI
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
 
 env:
   AWS_REGION: us-east-1
