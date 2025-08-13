@@ -49,6 +49,41 @@ pids
 coverage/
 *.lcov
 
+# Python testing artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Test screenshots and videos (optional - you might want to keep some)
+tests/fixtures/screenshots/*.png
+tests/fixtures/screenshots/*.jpg
+tests/fixtures/videos/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
 # Temporary folders
 tmp/
 temp/

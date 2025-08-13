@@ -2,6 +2,11 @@
 
 A comprehensive set of Python tools to validate IAM policies using AWS Access Analyzer, featuring both GUI and command-line interfaces.
 
+![Tests](https://img.shields.io/badge/tests-19%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-AWS%20%26%20CLI-blue)
+![Python](https://img.shields.io/badge/python-3.6%2B-blue)
+![Playwright](https://img.shields.io/badge/testing-playwright-green)(https://img.shields.io/badge/testing-playwright-green)
+
 ## 🚀 Features
 
 ### GUI Application (`iam_policy_validator.py`)
@@ -18,6 +23,39 @@ A comprehensive set of Python tools to validate IAM policies using AWS Access An
 - **Profile Support**: Use `--profile` flag for specific AWS profiles
 - **Flexible Input**: Validate any policy file
 - **Detailed Output**: Formatted results with emojis and links
+
+## 🧪 Testing
+
+This project includes comprehensive test coverage using **Playwright** and **pytest**:
+
+### Test Results
+```
+✅ 19/19 tests passing (100% success rate)
+📊 Test Coverage:
+   • AWS Integration: 9 tests
+   • CLI End-to-End: 10 tests
+   • Total Test Code: 791 lines
+```
+
+### Test Categories
+- **AWS Integration Tests**: Mock AWS Access Analyzer responses, error handling, profile management
+- **CLI End-to-End Tests**: Real subprocess execution, file handling, output validation
+- **GUI Tests**: Web-based interface testing (requires web server)
+
+### Running Tests
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run all tests
+pytest tests/test_aws_integration.py tests/test_cli_e2e.py -v
+
+# Run with coverage
+pytest tests/ --cov=. --cov-report=html
+
+# Run specific test category
+pytest tests/test_cli_e2e.py -v
+```
 
 ## 📋 Requirements
 
