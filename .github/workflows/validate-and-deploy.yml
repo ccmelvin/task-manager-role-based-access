@@ -10,7 +10,7 @@ on:
 env:
   NODE_VERSION: '18'
   PYTHON_VERSION: '3.9'
-  AWS_REGION: 'us-east-1'
+  AWS_REGION: 'us-west-2'
 
 jobs:
   validate-structure:
@@ -188,7 +188,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: us-west-2
     
     - name: 📦 Install dependencies
       run: |
@@ -224,7 +224,7 @@ jobs:
           python3 iam_policy_validator_cli.py \
             --file cdk-template.json \
             --template \
-            --region us-east-1 \
+            --region us-west-2 \
             --fail-on-findings || echo "⚠️ Policy validation completed with findings"
         else
           echo "ℹ️ IAM policy validator CLI not found, skipping detailed validation"
@@ -247,7 +247,7 @@ jobs:
         echo "📊 Retrieving deployment outputs..."
         aws cloudformation describe-stacks \
           --stack-name TaskManagerStack \
-          --region us-east-1 \
+          --region us-west-2 \
           --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
           --output table || echo "ℹ️ No stack outputs available yet"
     
