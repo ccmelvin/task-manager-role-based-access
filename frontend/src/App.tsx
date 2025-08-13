@@ -108,7 +108,7 @@ function App() {
   if (!isSignedIn) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
+        <div className="bg-white p-8 rounded-lg shadow-md" data-testid="login-form">
           <h2 className="text-2xl font-bold mb-4">Task Manager - Demo Mode</h2>
           <p className="text-gray-600 mb-4">
             This is a demo version. AWS authentication is disabled.
@@ -116,6 +116,7 @@ function App() {
           <button
             onClick={handleSignIn}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            data-testid="demo-login-button"
           >
             Continue as Demo User
           </button>
@@ -126,25 +127,28 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
+      <header className="bg-white shadow" data-testid="app-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Task Manager</h1>
+              <h1 className="text-3xl font-bold text-gray-900" data-testid="app-title">
+                Task Manager
+              </h1>
               <p className="text-sm text-orange-600 mt-1">
                 🚧 Demo Mode - AWS services disabled
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
+            <div className="flex items-center space-x-4" data-testid="user-info">
+              <span className="text-sm text-gray-600" data-testid="user-email">
                 User: {mockUser.email}
               </span>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600" data-testid="user-role">
                 Role: {userRole}
               </span>
               <button
                 onClick={handleSignOut}
                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                data-testid="sign-out-button"
               >
                 Sign Out (Demo)
               </button>
@@ -160,6 +164,7 @@ function App() {
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                data-testid="new-task-button"
               >
                 {showForm ? 'Cancel' : 'Create Task'}
               </button>

@@ -30,35 +30,49 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, userRole, onUpdateTask }) =>
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12" data-testid="empty-state">
         <p className="text-gray-500">No tasks found</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-white shadow overflow-hidden sm:rounded-md" data-testid="task-list">
       <ul className="divide-y divide-gray-200">
         {tasks.map((task) => (
-          <li key={task.taskId} className="px-6 py-4">
+          <li key={task.taskId} className="px-6 py-4" data-testid="task-item">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
+                  <h3 className="text-lg font-medium text-gray-900" data-testid="task-title">
+                    {task.title}
+                  </h3>
                   <div className="flex space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(task.priority)}`}>
+                    <span 
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(task.priority)}`}
+                      data-testid="task-priority"
+                    >
                       {task.priority}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
+                    <span 
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}
+                      data-testid="task-status"
+                    >
                       {task.status}
                     </span>
                   </div>
                 </div>
-                <p className="mt-1 text-sm text-gray-600">{task.description}</p>
+                <p className="mt-1 text-sm text-gray-600" data-testid="task-description">
+                  {task.description}
+                </p>
                 <div className="mt-2 flex items-center text-sm text-gray-500">
-                  <span>Due: {new Date(task.deadline).toLocaleDateString()}</span>
+                  <span data-testid="task-deadline">
+                    Due: {new Date(task.deadline).toLocaleDateString()}
+                  </span>
                   <span className="mx-2">•</span>
-                  <span>Assigned to: {task.assignedTo}</span>
+                  <span data-testid="assigned-user">
+                    Assigned to: {task.assignedTo}
+                  </span>
                 </div>
               </div>
               {(userRole === 'Admin' || userRole === 'Contributor') && (
@@ -67,6 +81,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, userRole, onUpdateTask }) =>
                     value={task.status}
                     onChange={(e) => handleStatusChange(task.taskId, e.target.value as Task['status'])}
                     className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+                    data-testid="status-select"
                   >
                     <option value="pending">Pending</option>
                     <option value="in-progress">In Progress</option>

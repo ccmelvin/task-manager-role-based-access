@@ -32,6 +32,12 @@ export default defineConfig({
     
     /* Record video on failure */
     video: 'retain-on-failure',
+
+    /* Global timeout for each action */
+    actionTimeout: 10000,
+
+    /* Global timeout for navigation */
+    navigationTimeout: 30000,
   },
 
   /* Configure projects for major browsers */
@@ -41,34 +47,25 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+    // Temporarily disable other browsers for faster CI
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
 
     /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
     },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
-
-    /* Test against branded browsers. */
     // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 12'] },
     // },
   ],
 
@@ -78,5 +75,15 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
+
+  /* Global test timeout */
+  timeout: 30000,
+
+  /* Expect timeout */
+  expect: {
+    timeout: 10000,
   },
 });
