@@ -26,7 +26,7 @@ jobs:
 
     - name: 🧪 Run AWS integration tests
       working-directory: ./infrastructure
-      run: python -m pytest tests/test_aws_integration.py tests/test_cli_e2e.py -v
+      run: python -m pytest tests/test_aws_integration.py tests/test_cli_e2e.py tests/test_gui_e2e.py::TestIAMPolicyValidatorGUI -v
 
     - name: ✅ Infrastructure tests passed
       run: echo "✅ Infrastructure tests passed!"

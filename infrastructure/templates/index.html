@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAM Policy Validator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        textarea { width: 100%; height: 300px; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .finding { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .error { background-color: #ffebee; border-left: 4px solid #f44336; }
+        .warning { background-color: #fff3e0; border-left: 4px solid #ff9800; }
+        .info { background-color: #e3f2fd; border-left: 4px solid #2196f3; }
+        .success { background-color: #e8f5e8; border-left: 4px solid #4caf50; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 IAM Policy Validator</h1>
+        
+        <div class="section">
+            <h3>AWS Configuration</h3>
+            <p><strong>Current Identity:</strong> <span id="current-identity" data-testid="current-identity">{{ current_identity }}</span></p>
+            <button onclick="changeProfile()" data-testid="profile-selector">Change Profile</button>
+        </div>
+        
+        <div class="section">
+            <h3>Policy Input</h3>
+            <div>
+                <label>
+                    <input type="radio" name="policy-type" value="IDENTITY_POLICY" checked data-testid="policy-type-identity"> Identity Policy
+                </label>
+                <label>
+                    <input type="radio" name="policy-type" value="RESOURCE_POLICY" data-testid="policy-type-resource"> Resource Policy
+                </label>
+            </div>
+            <textarea id="policy-input" data-testid="policy-input" placeholder="Paste your IAM policy JSON here..."></textarea>
+            <div>
+                <button onclick="validatePolicy()" data-testid="validate-button">Validate Policy</button>
+                <button onclick="loadFromFile()" data-testid="load-file-button">Load from File</button>
+                <button onclick="showExamples()" data-testid="help-menu">Examples</button>
+            </div>
+            <input type="file" id="file-input" data-testid="file-input" accept=".json" style="display: none;" onchange="handleFileLoad(event)">
+        </div>
+        
+        <div class="section">
+            <h3>Validation Results</h3>
+            <div id="validation-results" data-testid="validation-results"></div>
+        </div>
+        
+        <div id="examples-modal" class="hidden">
+            <div class="section">
+                <h3>Example Policies</h3>
+                <button onclick="loadExample('overpermissive')" data-testid="load-example-overpermissive">Overly Permissive Policy</button>
+                <button onclick="loadExample('well_scoped_s3')">Well-Scoped S3 Policy</button>
+                <button onclick="loadExample('resource_policy')">Resource Policy</button>
+                <button onclick="hideExamples()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let examples = {};
+        
+        async function changeProfile() {
+            const profile = prompt("Enter AWS profile name (or leave empty for default):");
+            if (profile !== null) {
+                try {
+                    const response = await fetch('/api/set-profile', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({profile: profile || null})
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('current-identity').textContent = data.identity;
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('Error changing profile: ' + error.message);
+                }
+            }
+        }
+        
+        async function validatePolicy() {
+            const policyText = document.getElementById('policy-input').value;
+            const policyType = document.querySelector('input[name="policy-type"]:checked').value;
+            const resultsDiv = document.getElementById('validation-results');
+            
+            if (!policyText.trim()) {
+                resultsDiv.innerHTML = '<div class="error">Please enter a policy document</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div>Validating policy...</div>';
+            
+            try {
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({policy: policyText, type: policyType})
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                    return;
+                }
+                
+                if (data.findings && data.findings.length === 0) {
+                    resultsDiv.innerHTML = '<div class="success" data-testid="success-message">✅ No issues found! Policy looks good.</div>';
+                    return;
+                }
+                
+                let html = '';
+                data.findings.forEach(finding => {
+                    const severity = finding.findingType.toLowerCase();
+                    const icon = severity === 'error' ? '🚨' : severity === 'security_warning' ? '⚠️' : 'ℹ️';
+                    const cssClass = severity === 'error' ? 'error' : severity === 'security_warning' ? 'warning' : 'info';
+                    
+                    html += `
+                        <div class="finding ${cssClass}" data-testid="${severity.replace('_', '-')}">
+                            <strong>${icon} ${finding.findingType}</strong>: ${finding.issueCode}<br>
+                            ${finding.findingDetails}<br>
+                            <a href="${finding.learnMoreLink}" target="_blank">Learn more</a>
+                        </div>
+                    `;
+                });
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function loadFromFile() {
+            document.getElementById('file-input').click();
+        }
+        
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('policy-input').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        async function showExamples() {
+            if (Object.keys(examples).length === 0) {
+                const response = await fetch('/api/examples');
+                examples = await response.json();
+            }
+            document.getElementById('examples-modal').classList.remove('hidden');
+        }
+        
+        function hideExamples() {
+            document.getElementById('examples-modal').classList.add('hidden');
+        }
+        
+        function loadExample(exampleName) {
+            if (examples[exampleName]) {
+                document.getElementById('policy-input').value = JSON.stringify(examples[exampleName], null, 2);
+                hideExamples();
+            }
+        }
+    </script>
+</body>
+</html>
