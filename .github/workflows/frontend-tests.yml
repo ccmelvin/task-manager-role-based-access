@@ -25,7 +25,9 @@ jobs:
 
     - name: 📦 Install dependencies
       working-directory: ./frontend
-      run: npm ci
+      run: |
+        npm ci
+        npm install --save-dev @testing-library/jest-dom @testing-library/react @testing-library/user-event
 
     - name: 🏗️ Build frontend
       working-directory: ./frontend
@@ -33,7 +35,7 @@ jobs:
 
     - name: 🧪 Run unit tests
       working-directory: ./frontend
-      run: npm test -- --watchAll=false --passWithNoTests
+      run: npm test -- --watchAll=false --verbose
 
     - name: ✅ Frontend tests completed
       run: echo "Frontend build and tests completed successfully"
