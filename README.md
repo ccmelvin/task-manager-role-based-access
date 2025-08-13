@@ -188,3 +188,4 @@ This project is part of the AWS CDK Task Manager with Role-Based Access Control 
 ---
 
 **💡 Pro Tip**: Start with the GUI application for interactive policy development, then use the command-line tool for automation and CI/CD pipelines!
+# AWS credentials configured for deployment
