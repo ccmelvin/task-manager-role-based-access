@@ -346,4 +346,6 @@ if __name__ == '__main__':
     print("📝 Access the application at: http://localhost:8000")
     print("🔧 Use Ctrl+C to stop the server")
     
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    # Check if running in CI environment
+    debug_mode = os.getenv('CI') != 'true'
+    app.run(host='0.0.0.0', port=8000, debug=debug_mode, use_reloader=False)

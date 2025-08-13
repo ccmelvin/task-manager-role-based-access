@@ -28,9 +28,16 @@ jobs:
     - name: 🌐 Start web server for tests
       working-directory: ./infrastructure
       run: |
-        python web_gui.py &
-        sleep 3
-        curl -f http://localhost:8000 || echo "Server not ready"
+        nohup python web_gui.py > server.log 2>&1 &
+        sleep 5
+        for i in {1..10}; do
+          if curl -f http://localhost:8000 >/dev/null 2>&1; then
+            echo "Server is ready"
+            break
+          fi
+          echo "Waiting for server... ($i/10)"
+          sleep 2
+        done
 
     - name: 🧪 Run all tests
       working-directory: ./infrastructure
