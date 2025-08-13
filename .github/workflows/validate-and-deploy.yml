@@ -131,13 +131,13 @@ jobs:
         echo "📄 Validating JSON file syntax..."
         echo ""
         
-        # Check JSON files in infrastructure directory
-        json_files=$(find infrastructure -name "*.json" -type f)
+        # Check JSON files in infrastructure directory, excluding test fixtures and dependencies
+        json_files=$(find infrastructure -name "*.json" -type f -not -path "*/tests/fixtures/*" -not -path "*/venv/*" -not -path "*/.venv/*" -not -path "*/node_modules/*")
         
         if [ -z "$json_files" ]; then
           echo "⚠️  No JSON files found in infrastructure directory"
         else
-          echo "📁 Found JSON files:"
+          echo "📁 Found JSON files (excluding test fixtures):"
           echo "$json_files"
           echo ""
           
