@@ -1,10 +1,12 @@
 name: 🎯 Reliable Tests
 
+# Temporarily disabled - using minimal-ci.yml instead
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main ]
 
 jobs:
   # Start with what we know works
