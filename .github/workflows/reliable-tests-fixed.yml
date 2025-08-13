@@ -236,11 +236,11 @@ jobs:
         success_count=0
         total_count=5
         
-        [[ "${{ needs.infrastructure-tests.result }}" == "success" ]] && ((success_count++))
-        [[ "${{ needs.web-gui-tests.result }}" == "success" ]] && ((success_count++))
-        [[ "${{ needs.frontend-build-test.result }}" == "success" ]] && ((success_count++))
-        [[ "${{ needs.backend-build-test.result }}" == "success" ]] && ((success_count++))
-        [[ "${{ needs.project-validation.result }}" == "success" ]] && ((success_count++))
+        [[ "${{ needs.infrastructure-tests.result }}" == "success" ]] && success_count=$((success_count + 1))
+        [[ "${{ needs.web-gui-tests.result }}" == "success" ]] && success_count=$((success_count + 1))
+        [[ "${{ needs.frontend-build-test.result }}" == "success" ]] && success_count=$((success_count + 1))
+        [[ "${{ needs.backend-build-test.result }}" == "success" ]] && success_count=$((success_count + 1))
+        [[ "${{ needs.project-validation.result }}" == "success" ]] && success_count=$((success_count + 1))
         
         echo "📊 Results: $success_count/$total_count tests passed"
         
