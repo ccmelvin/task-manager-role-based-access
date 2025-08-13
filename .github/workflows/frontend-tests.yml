@@ -31,5 +31,9 @@ jobs:
       working-directory: ./frontend
       run: npm run build
 
-    - name: ✅ Frontend build successful
-      run: echo "Frontend builds successfully - tests temporarily disabled for debugging"
+    - name: 🧪 Run unit tests
+      working-directory: ./frontend
+      run: npm test -- --watchAll=false --passWithNoTests
+
+    - name: ✅ Frontend tests completed
+      run: echo "Frontend build and tests completed successfully"

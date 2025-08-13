@@ -4,3 +4,4 @@ pytest-playwright
 pytest-asyncio
 boto3
 moto  # For mocking AWS services
+flask  # For web GUI tests
