@@ -1,125 +1,96 @@
 name: 🧪 Tests
 
+# Temporarily disabled - replaced by working-ci.yml
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, '3.10', '3.11']
+        python-version: [3.8, 3.9, 3.10, 3.11]
 
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-    - name: 🐍 Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: 📦 Cache pip dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: 🔧 Install dependencies
-      working-directory: ./infrastructure
+    - name: Install dependencies
       run: |
+        cd infrastructure
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
         pip install -r requirements-test.txt
 
-    - name: 🎭 Install Playwright browsers
-      run: playwright install chromium
-
-    - name: 🧪 Run AWS Integration Tests
-      working-directory: ./infrastructure
+    - name: Run tests with pytest
       run: |
-        pytest tests/test_aws_integration.py -v --tb=short
+        cd infrastructure
+        python -m pytest tests/ -v --tb=short
 
-    - name: 🖥️ Run CLI End-to-End Tests
-      working-directory: ./infrastructure
-      run: |
-        pytest tests/test_cli_e2e.py -v --tb=short
-
-    - name: 📊 Run tests with coverage
-      working-directory: ./infrastructure
-      run: |
-        pytest tests/test_aws_integration.py tests/test_cli_e2e.py --cov=. --cov-report=xml --cov-report=html
-
-    - name: 📈 Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./infrastructure/coverage.xml
-        directory: ./infrastructure
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-
-    - name: 📋 Upload test results
+    - name: Upload test results
       uses: actions/upload-artifact@v3
       if: always()
       with:
         name: test-results-${{ matrix.python-version }}
-        path: |
-          infrastructure/htmlcov/
-          infrastructure/coverage.xml
+        path: infrastructure/test-results/
 
   lint:
     runs-on: ubuntu-latest
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
 
-    - name: 🐍 Set up Python
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: 3.9
 
-    - name: 🔍 Install linting tools
+    - name: Install dependencies
       run: |
+        cd infrastructure
         python -m pip install --upgrade pip
-        pip install flake8 black isort
+        pip install -r requirements-test.txt
 
-    - name: 🎨 Check code formatting with Black
-      working-directory: ./infrastructure
-      run: black --check --diff .
-
-    - name: 📏 Check import sorting with isort
-      working-directory: ./infrastructure
-      run: isort --check-only --diff .
-
-    - name: 🔍 Lint with flake8
-      working-directory: ./infrastructure
-      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Lint with flake8
+      run: |
+        cd infrastructure
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
   security:
     runs-on: ubuntu-latest
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
 
-    - name: 🐍 Set up Python
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: 3.9
 
-    - name: 🔒 Run security checks with bandit
+    - name: Install dependencies
       run: |
-        pip install bandit
-        bandit -r infrastructure/ -f json -o bandit-report.json || true
+        cd infrastructure
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
 
-    - name: 📋 Upload security report
+    - name: Run security checks with bandit
+      run: |
+        cd infrastructure
+        bandit -r . -f json -o bandit-report.json || true
+
+    - name: Upload security report
       uses: actions/upload-artifact@v3
       if: always()
       with:
         name: security-report
-        path: bandit-report.json
+        path: infrastructure/bandit-report.json
