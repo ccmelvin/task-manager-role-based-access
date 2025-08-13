@@ -1,0 +1,54 @@
+{
+  "project": {
+    "name": "Task Manager with Role-Based Access Control",
+    "description": "Full-stack application with React frontend, AWS CDK infrastructure, and comprehensive IAM Policy Validator tools",
+    "version": "1.0.0",
+    "type": "full-stack-aws"
+  },
+  "rules": {
+    "enabled": true,
+    "files": [
+      "rules/project-overview.md",
+      "rules/coding-standards.md",
+      "rules/testing-guidelines.md",
+      "rules/aws-best-practices.md",
+      "rules/iam-policy-validation.md",
+      "rules/deployment-cicd.md"
+    ]
+  },
+  "context": {
+    "primary_languages": ["TypeScript", "Python", "JavaScript"],
+    "frameworks": ["React", "AWS CDK", "Flask", "Playwright"],
+    "aws_services": [
+      "Lambda",
+      "DynamoDB",
+      "API Gateway",
+      "Cognito",
+      "Access Analyzer",
+      "CloudWatch",
+      "S3",
+      "IAM"
+    ],
+    "testing_frameworks": ["Jest", "pytest", "Playwright", "React Testing Library"],
+    "deployment": ["GitHub Actions", "AWS CDK", "CI/CD"]
+  },
+  "preferences": {
+    "code_style": "conventional-commits",
+    "testing_approach": "comprehensive",
+    "security_level": "high",
+    "documentation_level": "detailed"
+  },
+  "directories": {
+    "frontend": "React application with TypeScript",
+    "infrastructure": "AWS CDK and IAM Policy Validator tools",
+    "tests": "Comprehensive test suite with Playwright",
+    ".github/workflows": "CI/CD automation"
+  },
+  "key_files": {
+    "infrastructure/iam_policy_validator.py": "GUI tool for policy validation",
+    "infrastructure/simple_validator.py": "CLI tool for policy validation",
+    "infrastructure/web_gui.py": "Web interface for policy validation",
+    "infrastructure/tests/": "Test suite with 19 passing tests",
+    ".github/workflows/tests.yml": "Automated testing pipeline"
+  }
+}
