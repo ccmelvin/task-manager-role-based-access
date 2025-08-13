@@ -1,0 +1,125 @@
+name: 🧪 Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10', '3.11']
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 📦 Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: 🔧 Install dependencies
+      working-directory: ./infrastructure
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+
+    - name: 🎭 Install Playwright browsers
+      run: playwright install chromium
+
+    - name: 🧪 Run AWS Integration Tests
+      working-directory: ./infrastructure
+      run: |
+        pytest tests/test_aws_integration.py -v --tb=short
+
+    - name: 🖥️ Run CLI End-to-End Tests
+      working-directory: ./infrastructure
+      run: |
+        pytest tests/test_cli_e2e.py -v --tb=short
+
+    - name: 📊 Run tests with coverage
+      working-directory: ./infrastructure
+      run: |
+        pytest tests/test_aws_integration.py tests/test_cli_e2e.py --cov=. --cov-report=xml --cov-report=html
+
+    - name: 📈 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./infrastructure/coverage.xml
+        directory: ./infrastructure
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: 📋 Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          infrastructure/htmlcov/
+          infrastructure/coverage.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 🔍 Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort
+
+    - name: 🎨 Check code formatting with Black
+      working-directory: ./infrastructure
+      run: black --check --diff .
+
+    - name: 📏 Check import sorting with isort
+      working-directory: ./infrastructure
+      run: isort --check-only --diff .
+
+    - name: 🔍 Lint with flake8
+      working-directory: ./infrastructure
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 🔒 Run security checks with bandit
+      run: |
+        pip install bandit
+        bandit -r infrastructure/ -f json -o bandit-report.json || true
+
+    - name: 📋 Upload security report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-report
+        path: bandit-report.json
