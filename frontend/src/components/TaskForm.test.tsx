@@ -73,7 +73,7 @@ describe('TaskForm Component', () => {
     expect(screen.getByDisplayValue('Test Task Title')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test task description')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2025-12-31')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('high')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Priority/)).toHaveValue('high');
     expect(screen.getByDisplayValue('test@example.com')).toBeInTheDocument();
   });
 
