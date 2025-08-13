@@ -1,14 +1,13 @@
 name: 🎭 Frontend Tests
 
 on:
-  # Temporarily disabled to focus on main workflow
   workflow_dispatch:
-  # push:
-  #   branches: [ main, develop ]
-  #   paths: [ 'frontend/**' ]
-  # pull_request:
-  #   branches: [ main ]
-  #   paths: [ 'frontend/**' ]
+  push:
+    branches: [ main, develop ]
+    paths: [ 'frontend/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'frontend/**' ]
 
 jobs:
   basic-tests:
