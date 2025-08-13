@@ -1,10 +1,12 @@
 name: 🧪 Comprehensive Tests
 
+# Temporarily disabled while debugging - using reliable-tests.yml instead
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main ]
 
 jobs:
   backend-tests:
