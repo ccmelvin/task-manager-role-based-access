@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 // Temporarily commented out AWS imports
 // import { Amplify } from 'aws-amplify';
 // import { getCurrentUser, signOut } from 'aws-amplify/auth';
 // import { Authenticator } from '@aws-amplify/ui-react';
-import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
-import { Task, UserProfile } from './types';
+import TaskList from './components/TaskList';
+import { AuthProvider } from './contexts/AuthContext';
+import { Task } from './types';
+import { applySecurityHeaders, setupSecurityMonitoring } from './utils/securityConfig';
+import { sessionManager } from './utils/sessionManager';
 // import '@aws-amplify/ui-react/styles.css';
 
 // Mock user for demo purposes
@@ -62,6 +65,41 @@ function App() {
   const [userRole, setUserRole] = useState<string>(mockUser.role);
   const [showForm, setShowForm] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(true); // Mock signed in state
+  const [sessionWarning, setSessionWarning] = useState<{ show: boolean; remainingTime: number }>({
+    show: false,
+    remainingTime: 0
+  });
+
+  // Initialize security features
+  useEffect(() => {
+    // Apply security headers
+    applySecurityHeaders();
+    
+    // Setup security monitoring
+    setupSecurityMonitoring();
+    
+    // Setup session management
+    sessionManager.addEventListener('warning', (event) => {
+      setSessionWarning({
+        show: true,
+        remainingTime: event.remainingTime || 0
+      });
+    });
+
+    sessionManager.addEventListener('expired', () => {
+      handleSignOut();
+      alert('Your session has expired. Please sign in again.');
+    });
+
+    // Start session if signed in
+    if (isSignedIn) {
+      sessionManager.startSession(mockUser.email);
+    }
+
+    return () => {
+      sessionManager.endSession();
+    };
+  }, [isSignedIn]);
 
   const handleCreateTask = async (taskData: Partial<Task>) => {
     // Mock task creation
@@ -95,13 +133,25 @@ function App() {
   };
 
   const handleSignOut = () => {
+    sessionManager.endSession();
     setIsSignedIn(false);
+    setSessionWarning({ show: false, remainingTime: 0 });
     console.log('Mock: User signed out');
   };
 
   const handleSignIn = () => {
     setIsSignedIn(true);
+    sessionManager.startSession(mockUser.email);
     console.log('Mock: User signed in');
+  };
+
+  const handleExtendSession = () => {
+    sessionManager.extendSession(15 * 60 * 1000); // Extend by 15 minutes
+    setSessionWarning({ show: false, remainingTime: 0 });
+  };
+
+  const handleDismissWarning = () => {
+    setSessionWarning({ show: false, remainingTime: 0 });
   };
 
   // Mock authentication wrapper
@@ -125,61 +175,97 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Task Manager</h1>
-              <p className="text-sm text-orange-600 mt-1">
-                🚧 Demo Mode - AWS services disabled
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-100">
+        {/* Session Warning Modal */}
+        {sessionWarning.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <svg className="w-6 h-6 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900">Session Expiring Soon</h3>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Your session will expire in {Math.ceil(sessionWarning.remainingTime / 60000)} minutes due to inactivity.
               </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                User: {mockUser.email}
-              </span>
-              <span className="text-sm text-gray-600">
-                Role: {userRole}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Sign Out (Demo)
-              </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleExtendSession}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Extend Session
+                </button>
+                <button
+                  onClick={handleDismissWarning}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        )}
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {(userRole === 'Admin' || userRole === 'Contributor') && (
-            <div className="mb-6">
-              <button
-                onClick={() => setShowForm(!showForm)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                {showForm ? 'Cancel' : 'Create Task'}
-              </button>
+        <header className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Task Manager</h1>
+                <p className="text-sm text-orange-600 mt-1">
+                  🚧 Demo Mode - AWS services disabled
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  ✅ Security features enabled: CSP, CSRF protection, session management
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">
+                  User: {mockUser.email}
+                </span>
+                <span className="text-sm text-gray-600">
+                  Role: {userRole}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Sign Out (Demo)
+                </button>
+              </div>
             </div>
-          )}
+          </div>
+        </header>
 
-          {showForm && (
-            <div className="mb-6">
-              <TaskForm onSubmit={handleCreateTask} onCancel={() => setShowForm(false)} />
-            </div>
-          )}
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            {(userRole === 'Admin' || userRole === 'Contributor') && (
+              <div className="mb-6">
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  {showForm ? 'Cancel' : 'Create Task'}
+                </button>
+              </div>
+            )}
 
-          <TaskList
-            tasks={tasks}
-            userRole={userRole}
-            onUpdateTask={handleUpdateTask}
-          />
-        </div>
-      </main>
-    </div>
+            {showForm && (
+              <div className="mb-6">
+                <TaskForm onSubmit={handleCreateTask} onCancel={() => setShowForm(false)} />
+              </div>
+            )}
+
+            <TaskList
+              tasks={tasks}
+              userRole={userRole}
+              onUpdateTask={handleUpdateTask}
+            />
+          </div>
+        </main>
+      </div>
+    </AuthProvider>
   );
 }
 

